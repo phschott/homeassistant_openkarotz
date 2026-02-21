@@ -1,0 +1,175 @@
+input_text:
+  karotz_led_color:
+    name: Couleur LED
+    initial: "00FF00"  # vert par défaut
+  karotz_led_color2:
+    name: Couleur LED 2
+    initial: "000000"  # noir par défaut
+  karotz_text_message:
+    name: Message
+    initial: "Bonjour"
+  karotz_ip:
+    name: IP Karotz
+    initial: "192.168.1.170"
+    
+input_number:
+  karotz_pulse_speed:
+    name: Frequence
+    min: 0
+    max: 2000
+    initial: 700
+    step: 1
+  karotz_ear_left:
+    name: Position Oreille Gauche
+    initial: 0
+    min: 0
+    max: 16
+    step: 1
+  karotz_ear_right:
+    name: Position Oreille Droite
+    initial: 0
+    min: 0
+    max: 16
+    step: 1
+
+input_select:
+  karotz_voice:
+    name: Voix Karotz
+    options:
+      - "1 - fr Female"
+      - "2 - fr Male"
+      - "3 - ca Female"
+      - "4 - ca Male"
+      - "5 - us Female"
+      - "6 - us Male"
+      - "7 - uk Female"
+      - "8 - uk Female"
+      - "9 - de Female"
+      - "10 - de Male"
+      - "11 - it Female"
+      - "12 - it Male"
+      - "13 - sp Female"
+      - "14 - sp Male"
+    initial: "1 - fr Female"
+
+rest:
+  - resource: "http://192.168.1.170/cgi-bin/status"
+    scan_interval: 3600
+    sensor:
+      - name: "Karotz used space"
+        value_template: "{{ value_json.karotz_percent_used_space }}"
+        unit_of_measurement: "%"
+    
+      - name: "Karotz version"
+        value_template: "{{ value_json.version }}"
+    
+      - name: "Karotz Led Color Raw"
+        value_template: "{{ value_json.led_color }}"
+    
+      - name: "Karotz Led pulse Raw"
+        value_template: "{{ value_json.led_pulse }}"
+        
+  - resource: "http://192.168.1.170/cgi-bin/voice_list"
+    sensor:
+      - name: "Voices List"
+        value_template: "{{ value_json.voices }}"
+
+rest_command:
+  # =====================
+  # STATUS / POWER
+  # =====================
+  karotz_wakeup:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/wakeup"
+
+  karotz_wakeup_silent:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/wakeup?silent=1"
+
+  karotz_sleep:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/sleep"
+
+  # =====================
+  # LEDS
+  # =====================
+  karotz_led_fixed:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/leds?color={{ states('input_text.karotz_led_color') }}"
+
+  karotz_led_off:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/leds?color=000000"
+
+  karotz_led_pulse:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/leds?pulse=1&color={{ states('input_text.karotz_led_color') }}&speed={{ states('input_number.karotz_pulse_speed') }}&color2={{ states('input_text.karotz_led_color2') }}"
+
+  # =====================
+  # EARS
+  # =====================
+  karotz_ears_enable:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/ears_mode?disable=0"
+
+  karotz_ears_move:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/ears?left={{ states('input_number.karotz_ear_left') | int }}&right={{ states('input_number.karotz_ear_right') | int }}&noreset=1"
+
+  karotz_ears_reset:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/ears_reset"
+
+  karotz_ears_random:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/ears_random"
+
+  # =====================
+  # VOICE / TTS
+  # =====================
+  karotz_tts:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/tts?voice={{ states('input_select.karotz_voice') | default(1) }}&text={{ states('input_text.karotz_text_message') | urlencode }}&nocache=0"
+
+  # =====================
+  # SNAPSHOT / WEBCAM
+  # =====================
+  karotz_snapshot:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/snapshot?silent=1"
+
+  karotz_webcam:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/webcam?silent=1"
+
+  karotz_clear_snapshots:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/clear_snapshots"
+
+  # =====================
+  # APPS / MOODS / RADIO
+  # =====================
+  karotz_play_mood:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/apps/moods?id={{ mood_id }}"
+
+  karotz_play_random_mood:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/apps/moods"
+
+  karotz_play_clock:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/apps/clock"
+
+  karotz_play_radio:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/sound?url={{ stream_url | urlencode }}"
+
+  # =====================
+  # RFID
+  # =====================
+  karotz_rfid_start_record:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/rfid_start_record"
+
+  karotz_rfid_stop_record:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/rfid_stop_record"
+
+  karotz_rfid_list:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/rfid_list"
+
+  karotz_rfid_list_ext:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/rfid_list_ext"
+
+  karotz_rfid_delete:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/rfid_delete?tag={{ tag }}"
+
+  karotz_rfid_unassign:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/rfid_unassign?tag={{ tag }}"
+
+  karotz_rfid_rename:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/rfid_rename?tag={{ tag }}&color={{ color }}&name={{ name | urlencode }}"
+
+  karotz_rfid_assign_url:
+    url: "http://{{ states('input_text.karotz_ip') }}/cgi-bin/rfid_assign_url?tag={{ tag }}&url={{ url | urlencode }}"

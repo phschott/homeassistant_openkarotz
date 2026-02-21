@@ -1,0 +1,18 @@
+- id: '1771280612450'
+  alias: Update Karotz voice list
+  description: ''
+  triggers:
+  - entity_id: sensor.karotz_voices_list
+    trigger: state
+  - event: start
+    trigger: homeassistant
+  conditions:
+  - condition: template
+    value_template: '{{ states(''sensor.karotz_voices_list'') != '''' }}'
+  actions:
+  - target:
+      entity_id: input_select.karotz_voice
+    data:
+      options: '{{ states(''sensor.karotz_voices_list'').split(''|'') }}'
+    action: input_select.set_options
+  mode: single
